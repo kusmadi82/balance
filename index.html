@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vault — Multi-Chain Wallet Tracker</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #0a0a0a;
+      color: #e8e8e8;
+      overflow-x: hidden;
+    }
+
+    .serif {
+      font-family: 'DM Serif Display', serif;
+    }
+
+    .glass {
+      background: rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .glass-strong {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(24px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .gold-glow {
+      box-shadow: 0 0 30px rgba(212, 175, 55, 0.15);
+    }
+
+    .fade-in {
+      animation: fadeIn 0.8s ease-out forwards;
+      opacity: 0;
+    }
+
+    .slide-up {
+      animation: slideUp 0.6s ease-out forwards;
+      opacity: 0;
+      transform: translateY(20px);
+    }
+
+    @keyframes fadeIn {
+      to {
+        opacity: 1;
+      }
+    }
+
+    @keyframes slideUp {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .stagger-1 { animation-delay: 0.1s; }
+    .stagger-2 { animation-delay: 0.2s; }
+    .stagger-3 { animation-delay: 0.3s; }
+    .stagger-4 { animation-delay: 0.4s; }
+    .stagger-5 { animation-delay: 0.5s; }
+
+    .value-animate {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .chain-pill {
+      transition: all 0.25s ease;
+      cursor: pointer;
+    }
+
+    .chain-pill:hover {
+      background: rgba(212, 175, 55, 0.15);
+      border-color: rgba(212, 175, 55, 0.4);
+      transform: translateY(-1px);
+    }
+
+    .chain-pill.active {
+      background: linear-gradient(135deg, rgba(212, 175, 55, 0.2), rgba(212, 175, 55, 0.1));
+      border-color: #d4af37;
+      box-shadow: 0 0 20px rgba(212, 175, 55, 0.2);
+    }
+
+    .token-row {
+      transition: all 0.2s ease;
+    }
+
+    .token-row:hover {
+      background: rgba(255, 255, 255, 0.02);
+      transform: translateX(4px);
+    }
+
+    .tx-row {
+      transition: all 0.2s ease;
+    }
+
+    .tx-row:hover {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .positive {
+      color: #10b981;
+    }
+
+    .negative {
+      color: #ef4444;
+    }
+
+    .noise {
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
+    }
+
+    .gradient-border {
+      position: relative;
+    }
+
+    .gradient-border::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      padding: 1px;
+      background: linear-gradient(135deg, rgba(212, 175, 55, 0.3), transparent);
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      pointer-events: none;
+    }
+
+    .divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    }
+  </style>
+</head>
+<body class="noise">
+  <div class="min-h-screen p-4 md:p-8 lg:p-12">
+    <div class="max-w-7xl mx-auto">
+      
+      <!-- Header -->
+      <header class="mb-12 fade-in">
+        <h1 class="text-5xl md:text-6xl serif tracking-tight mb-2" style="color: #d4af37;">Vault</h1>
+        <p class="text-gray-500 text-sm tracking-wide uppercase">Multi-Chain Portfolio Tracker</p>
+      </header>
+
+      <!-- Top Summary Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        
+        <!-- Portfolio Value -->
+        <div class="glass-strong rounded-2xl p-6 gradient-border gold-glow slide-up stagger-1">
+          <div class="text-gray-400 text-xs uppercase tracking-wider mb-3">Total Portfolio Value</div>
+          <div class="text-4xl font-semibold mb-2 value-animate" id="portfolioValue">$0.00</div>
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-gray-500">USD</span>
+          </div>
+        </div>
+
+        <!-- 24h P&L -->
+        <div class="glass rounded-2xl p-6 slide-up stagger-2">
+          <div class="text-gray-400 text-xs uppercase tracking-wider mb-3">24h Profit & Loss</div>
+          <div class="text-3xl font-semibold mb-2 value-animate" id="pnlValue">+$0.00</div>
+          <div class="flex items-center gap-2">
+            <span class="text-xs" id="pnlPercent">+0.00%</span>
+          </div>
+        </div>
+
+        <!-- Total Assets -->
+        <div class="glass rounded-2xl p-6 slide-up stagger-3">
+          <div class="text-gray-400 text-xs uppercase tracking-wider mb-3">Total Assets</div>
+          <div class="text-3xl font-semibold mb-2" id="assetCount">0</div>
+          <div class="text-xs text-gray-500">Across <span id="chainCount">0</span> chains</div>
+        </div>
+
+      </div>
+
+      <!-- Chain Filter Pills -->
+      <div class="flex flex-wrap gap-3 mb-8 slide-up stagger-4">
+        <button class="chain-pill glass px-5 py-2.5 rounded-full text-sm font-medium active" data-chain="all">
+          All Chains
+        </button>
+        <button class="chain-pill glass px-5 py-2.5 rounded-full text-sm font-medium flex items-center gap-2" data-chain="ethereum">
+          <span class="w-2 h-2 rounded-full bg-blue-400"></span>
+          Ethereum
+        </button>
+        <button class="chain-pill glass px-5 py-2.5 rounded-full text-sm font-medium flex items-center gap-2" data-chain="solana">
+          <span class="w-2 h-2 rounded-full bg-purple-400"></span>
+          Solana
+        </button>
+        <button class="chain-pill glass px-5 py-2.5 rounded-full text-sm font-medium flex items-center gap-2" data-chain="bsc">
+          <span class="w-2 h-2 rounded-full bg-yellow-400"></span>
+          BSC
+        </button>
+      </div>
+
+      <!-- Main Content Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+        
+        <!-- Allocation Chart -->
+        <div class="glass-strong rounded-2xl p-8 slide-up stagger-5">
+          <h2 class="text-xl font-semibold mb-6 serif" style="color: #d4af37;">Allocation</h2>
+          <div class="relative w-full aspect-square max-w-[280px] mx-auto">
+            <canvas id="allocationChart"></canvas>
+          </div>
+          <div id="allocationLegend" class="mt-6 space-y-3"></div>
+        </div>
+
+        <!-- Token Holdings -->
+        <div class="lg:col-span-2 glass rounded-2xl p-8 slide-up stagger-5">
+          <h2 class="text-xl font-semibold mb-6 serif" style="color: #d4af37;">Holdings</h2>
+          <div class="overflow-x-auto">
+            <table class="w-full">
+              <thead>
+                <tr class="text-left text-xs text-gray-500 uppercase tracking-wider">
+                  <th class="pb-4 font-medium">Asset</th>
+                  <th class="pb-4 font-medium">Balance</th>
+                  <th class="pb-4 font-medium">Price</th>
+                  <th class="pb-4 font-medium">24h</th>
+                  <th class="pb-4 font-medium text-right">Value</th>
+                </tr>
+              </thead>
+              <tbody id="tokenTableBody" class="text-sm">
+                <!-- Populated by JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Transaction History -->
+      <div class="glass rounded-2xl p-8 slide-up stagger-5">
+        <h2 class="text-xl font-semibold mb-6 serif" style="color: #d4af37;">Recent Transactions</h2>
+        <div class="space-y-3" id="transactionList">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
